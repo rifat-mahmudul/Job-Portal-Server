@@ -47,6 +47,9 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
+
+    const roomsCollection = client.db('Stayzy').collection('rooms')
+
     // auth related api
     app.post('/jwt', async (req, res) => {
       const user = req.body
@@ -75,6 +78,11 @@ async function run() {
       } catch (err) {
         res.status(500).send(err)
       }
+    })
+
+    app.get('/rooms', async (req, res) => {
+      const result = await roomsCollection.find().toArray();
+      res.send(result)
     })
 
     // Send a ping to confirm a successful connection
