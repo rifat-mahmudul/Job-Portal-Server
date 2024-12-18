@@ -106,7 +106,7 @@ async function run() {
     })
 
     //get room data for host by email
-    app.get('/rooms/:email', async (req, res) => {
+    app.get('/my-listings/:email', async (req, res) => {
       const email = req.params.email;
       const query = {'host.email' : email};
       const result = await roomsCollection.find(query).toArray();
