@@ -80,6 +80,15 @@ async function run() {
       }
     })
 
+  
+    //post room on DB
+    app.post('/room', async (req, res) => {
+      const roomData = req.body;
+      const result = await roomsCollection.insertOne(roomData);
+      res.send(result);
+    })
+
+    //get rooms data form DB
     app.get('/rooms', async (req, res) => {
       const category = req.query.category;
       let query = {};
@@ -88,6 +97,7 @@ async function run() {
       res.send(result)
     })
 
+    //get single room Data from DB
     app.get('/rooms/:id', async (req, res) => {
       const id = req.params.id;
       const query = {_id : new ObjectId(id)};
