@@ -3,7 +3,7 @@ const app = express()
 require('dotenv').config()
 const cors = require('cors')
 const cookieParser = require('cookie-parser')
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb')
+const { MongoClient, ServerApiVersion, ObjectId, Timestamp } = require('mongodb')
 const jwt = require('jsonwebtoken')
 
 const port = process.env.PORT || 5000
@@ -48,7 +48,8 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
 
-    const roomsCollection = client.db('Stayzy').collection('rooms')
+    const roomsCollection = client.db('Stayzy').collection('rooms');
+    const usersCollection = client.db('Stayzy').collection('users')
 
     // auth related api
     app.post('/jwt', async (req, res) => {
@@ -78,6 +79,23 @@ async function run() {
       } catch (err) {
         res.status(500).send(err)
       }
+    })
+
+
+    //save and update user data in DB
+    app.put('/user', async (req, res) => {
+      const user = req.body;
+      const options = {upsert : true};
+      const query = {email : user?.email};
+      const updateDoc = {
+        $set : {
+          ...user,
+          Timestamp : Date.now()
+        }
+      }
+
+      const result = await usersCollection.updateOne(query, updateDoc, options)
+      res.send(result);
     })
 
   
