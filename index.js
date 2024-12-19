@@ -115,6 +115,13 @@ async function run() {
       res.send(result);
     })
 
+    //get all user data from DB
+    app.get('/users', async (req, res) => {
+      const result = await usersCollection.find().toArray();
+      res.send(result);
+    })
+    
+
   
     //post room on DB
     app.post('/room', async (req, res) => {
