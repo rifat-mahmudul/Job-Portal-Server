@@ -2,9 +2,9 @@ const express = require('express')
 const app = express()
 require('dotenv').config()
 const cors = require('cors')
+const jwt = require('jsonwebtoken')
 const cookieParser = require('cookie-parser')
 const { MongoClient, ServerApiVersion, ObjectId, Timestamp } = require('mongodb')
-const jwt = require('jsonwebtoken')
 
 const port = process.env.PORT || 5000
 
@@ -15,25 +15,21 @@ const corsOptions = {
   optionSuccessStatus: 200,
 }
 app.use(cors(corsOptions))
-
 app.use(express.json())
 app.use(cookieParser())
 
-// Verify Token Middleware
-const verifyToken = async (req, res, next) => {
-  const token = req.cookies?.token
-  console.log(token)
-  if (!token) {
-    return res.status(401).send({ message: 'unauthorized access' })
-  }
-  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
-    if (err) {
-      console.log(err)
-      return res.status(401).send({ message: 'unauthorized access' })
+const verifyToken = (req, res, next) => {
+    const token = req.cookies?.token;
+    if(!token) return res.status(401).send({message : 'unAuthorized access'})
+    if(token){
+      jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+        if(err){
+          return res.status(401).send({message : 'unAuthorized access'})
+        }
+        req.user = decoded;
+        next();
+      })
     }
-    req.user = decoded
-    next()
-  })
 }
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.zee3o.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`
@@ -51,36 +47,29 @@ async function run() {
     const roomsCollection = client.db('Stayzy').collection('rooms');
     const usersCollection = client.db('Stayzy').collection('users')
 
-    // auth related api
-    app.post('/jwt', async (req, res) => {
-      const user = req.body
-      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
-        expiresIn: '365d',
-      })
+    //create token with jwt
+    app.post('/jwt', (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn : '2h'})
       res
-        .cookie('token', token, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
-        })
-        .send({ success: true })
-    })
-    // Logout
-    app.get('/logout', async (req, res) => {
-      try {
-        res
-          .clearCookie('token', {
-            maxAge: 0,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
-          })
-          .send({ success: true })
-        console.log('Logout successful')
-      } catch (err) {
-        res.status(500).send(err)
-      }
+      .cookie('token', token, {
+        httpOnly : true,
+        secure : process.env.NODE_ENV === 'production',
+        sameSite : process.env.NODE_ENV === 'production' ? 'none' : 'strict'
+      })
+      .send({success : true})
     })
 
+    app.get('/logout', (req, res) => {
+      res
+      .clearCookie('token', {
+        httpOnly : true,
+        secure : process.env.NODE_ENV === 'production',
+        sameSite : process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+        maxAge : 0,
+      })
+      .send({success : true})
+    })
 
     //save and update user data in DB
     app.put('/user', async (req, res) => {
