@@ -87,6 +87,13 @@ async function run() {
       const user = req.body;
       const options = {upsert : true};
       const query = {email : user?.email};
+
+      const isExist = await usersCollection.findOne(query);
+
+      if(isExist){
+        return res.send({message : "already saved in Database."})
+      }
+
       const updateDoc = {
         $set : {
           ...user,
