@@ -91,7 +91,17 @@ async function run() {
       const isExist = await usersCollection.findOne(query);
 
       if(isExist){
-        return res.send({message : "already saved in Database."})
+        if(user?.status === "Requested"){
+          const result = await usersCollection.updateOne(query, {
+            $set : {
+              status : user?.status
+            }
+          })
+          return res.send(result);
+        }
+        else{
+          return res.send({message : "already saved in Database."})
+        }
       }
 
       const updateDoc = {
