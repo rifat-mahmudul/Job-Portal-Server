@@ -60,6 +60,18 @@ async function run() {
       .send({success : true});
     })
 
+    //jwt token for logOut
+    app.get('/logout', async(req, res) => {
+      res
+      .clearCookie('token', {
+        httpOnly : true,
+        secure : process.env.NODE_ENV === 'production',
+        sameSite : process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+        maxAge : 0
+      })
+      .send({success : true})
+    })
+
     //save and update user data in DB
     app.put('/user', async (req, res) => {
       const user = req.body;
