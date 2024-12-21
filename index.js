@@ -67,6 +67,7 @@ async function run() {
       if(!result || result?.role !=="host"){
         return res.status(401).send({message : 'unAuthorized access'});
       }
+      next();
     }
 
 
@@ -160,7 +161,7 @@ async function run() {
 
   
     //post room on DB
-    app.post('/room', async (req, res) => {
+    app.post('/room', verifyToken, verifyHost, async (req, res) => {
       const roomData = req.body;
       const result = await roomsCollection.insertOne(roomData);
       res.send(result);
@@ -184,7 +185,7 @@ async function run() {
     })
 
     //get my-listings data for host by email
-    app.get('/my-listings/:email', async (req, res) => {
+    app.get('/my-listings/:email', verifyToken, verifyHost, async (req, res) => {
       const email = req.params.email;
       const query = {'host.email' : email};
       const result = await roomsCollection.find(query).toArray();
@@ -192,7 +193,7 @@ async function run() {
     })
 
     //Delete my-list Data from DB
-    app.delete('/my-listings/:id', async (req, res) => {
+    app.delete('/my-listings/:id', verifyToken, verifyHost, async (req, res) => {
       const id = req.params.id;
       const query = {_id : new ObjectId(id)};
       const result = await roomsCollection.deleteOne(query);
