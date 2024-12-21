@@ -28,6 +28,7 @@ const verifyToken = (req, res, next) => {
         return res.status(401).send({message : 'unAuthorized access'})
       }
       req.user = decoded;
+      next();
     })
   }
 }
@@ -49,22 +50,30 @@ async function run() {
 
     //verify admin middleware
     const verifyAdmin = async (req, res, next) => {
-      const user = req.body;
-      console.log(user)
+      const user = req.user;
       const query = {email : user?.email};
       const result = await usersCollection.findOne(query);
-      console.log(result?.role);
       if(!result || result?.role !== "admin"){
         return res.status(401).send({message : 'unAuthorized access'});
       }
       next();
     }
 
+    //verify host middleware
+    const verifyHost = async (req, res, next) => {
+      const user = req.user;
+      const query = {email : user?.email};
+      const result = await usersCollection.findOne(query);
+      if(!result || result?.role !=="host"){
+        return res.status(401).send({message : 'unAuthorized access'});
+      }
+    }
+
 
     //jwt token for authentication
     app.post('/jwt', async (req, res) => {
       const user = req.body;
-      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn : '1d'});
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn : '365d'});
       res
       .cookie('token', token, {
         httpOnly : true,
@@ -87,7 +96,7 @@ async function run() {
     })
 
     //save and update user data in DB
-    app.put('/user', verifyToken, verifyAdmin, async (req, res) => {
+    app.put('/user', async (req, res) => {
       const user = req.body;
       const options = {upsert : true};
       const query = {email : user?.email};
@@ -126,7 +135,7 @@ async function run() {
     })
     
     //get a user by email
-    app.get('/users/:email', verifyToken, verifyAdmin, async (req, res) => {
+    app.get('/users/:email', async (req, res) => {
       const email = req.params.email;
       const query = {email : email};
       const result = await usersCollection.findOne(query);
@@ -134,7 +143,7 @@ async function run() {
     })
 
     //update user role by email
-    app.patch('/users/update/:email', verifyToken, verifyAdmin, async (req, res) => {
+    app.patch('/users/update/:email', async (req, res) => {
       const email = req.params.email;
       const user = req.body;
       const query = {email : email};
