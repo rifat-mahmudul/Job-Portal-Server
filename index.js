@@ -47,6 +47,19 @@ async function run() {
     const roomsCollection = client.db('Stayzy').collection('rooms');
     const usersCollection = client.db('Stayzy').collection('users')
 
+    //verify admin middleware
+    const verifyAdmin = async (req, res, next) => {
+      const user = req.body;
+      console.log(user)
+      const query = {email : user?.email};
+      const result = await usersCollection.findOne(query);
+      console.log(result?.role);
+      if(!result || result?.role !== "admin"){
+        return res.status(401).send({message : 'unAuthorized access'});
+      }
+      next();
+    }
+
 
     //jwt token for authentication
     app.post('/jwt', async (req, res) => {
@@ -74,7 +87,7 @@ async function run() {
     })
 
     //save and update user data in DB
-    app.put('/user', async (req, res) => {
+    app.put('/user', verifyToken, verifyAdmin, async (req, res) => {
       const user = req.body;
       const options = {upsert : true};
       const query = {email : user?.email};
@@ -107,13 +120,13 @@ async function run() {
     })
 
     //get all user data from DB
-    app.get('/users', async (req, res) => {
+    app.get('/users', verifyToken, verifyAdmin, async (req, res) => {
       const result = await usersCollection.find().toArray();
       res.send(result);
     })
     
     //get a user by email
-    app.get('/users/:email', async (req, res) => {
+    app.get('/users/:email', verifyToken, verifyAdmin, async (req, res) => {
       const email = req.params.email;
       const query = {email : email};
       const result = await usersCollection.findOne(query);
@@ -121,7 +134,7 @@ async function run() {
     })
 
     //update user role by email
-    app.patch('/users/update/:email', async (req, res) => {
+    app.patch('/users/update/:email', verifyToken, verifyAdmin, async (req, res) => {
       const email = req.params.email;
       const user = req.body;
       const query = {email : email};
