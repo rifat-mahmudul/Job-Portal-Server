@@ -120,6 +120,22 @@ async function run() {
       res.send(result);
     })
 
+    //update user role by email
+    app.patch('/users/update/:email', async (req, res) => {
+      const email = req.params.email;
+      const user = req.body;
+      const query = {email : email};
+      const updateDoc = {
+        $set : {
+          ...user,
+          Timestamp : Date.now()
+        }
+      }
+
+      const result = await usersCollection.updateOne(query, updateDoc);
+      res.send(result);
+    })
+
   
     //post room on DB
     app.post('/room', async (req, res) => {
